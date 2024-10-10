@@ -11,9 +11,6 @@ import (
 )
 
 const (
-	width  = 1000
-	height = 1000
-
 	vertexShaderSource = `
     #version 460
     in vec3 vp;
@@ -38,10 +35,12 @@ const (
 
 var (
 	triangle = []float32{
-		0, 1, 0, // top
-		-1, -1, 0, // left
-		1, -1, 0, // right
+		1, 1, 0, // top right
+		1, -1, 0, // top left
+		-1, 1, 0, // bottom right
 	}
+	width  float32 = 1000
+	height float32 = 1000
 )
 
 func main() {
@@ -50,7 +49,7 @@ func main() {
 	window := initGlfw()
 	defer glfw.Terminate()
 
-	program := initOpenGL()
+	program := initOpenGL(window)
 
 	vao := makeVao(triangle)
 
@@ -65,13 +64,13 @@ func initGlfw() *glfw.Window {
 		panic(err)
 	}
 
-	glfw.WindowHint(glfw.Resizable, glfw.False)
+	glfw.WindowHint(glfw.Resizable, glfw.True)
 	glfw.WindowHint(glfw.ContextVersionMajor, 4)
 	glfw.WindowHint(glfw.ContextVersionMinor, 6)
 	glfw.WindowHint(glfw.OpenGLProfile, glfw.OpenGLCoreProfile)
 	glfw.WindowHint(glfw.OpenGLForwardCompatible, glfw.True)
 
-	window, err := glfw.CreateWindow(width, height, "Goxel engine", nil, nil)
+	window, err := glfw.CreateWindow(int(width), int(height), "Goxel engine", nil, nil)
 	if err != nil {
 		panic(err)
 	}
@@ -81,7 +80,7 @@ func initGlfw() *glfw.Window {
 }
 
 // initOpenGL initializes OpenGL and returns an intiialized program.
-func initOpenGL() uint32 {
+func initOpenGL(window *glfw.Window) uint32 {
 	if err := gl.Init(); err != nil {
 		panic(err)
 	}
@@ -102,6 +101,9 @@ func initOpenGL() uint32 {
 	gl.AttachShader(prog, vertexShader)
 	gl.AttachShader(prog, fragmentShader)
 	gl.LinkProgram(prog)
+
+	window.SetSizeCallback(windowResizeWrapper(prog))
+
 	return prog
 }
 
@@ -111,9 +113,6 @@ func draw(vao uint32, window *glfw.Window, program uint32) {
 	gl.BindVertexArray(vao)
 	gl.DrawArrays(gl.TRIANGLES, 0, int32(len(triangle)/3))
 	gl.UseProgram(program)
-
-	uSize := gl.GetUniformLocation(program, gl.Str("uSize"+"\x00"))
-	gl.Uniform2f(uSize, width, height)
 
 	glfw.PollEvents()
 	window.SwapBuffers()
@@ -157,4 +156,13 @@ func compileShader(source string, shaderType uint32) (uint32, error) {
 	}
 
 	return shader, nil
+}
+
+// Returns a closure, so I can pass parameters to it (eg. program)
+func windowResizeWrapper(program uint32) func(*glfw.Window, int, int) {
+	return func(window *glfw.Window, width int, height int) {
+		gl.Viewport(0, 0, int32(width), int32(height))
+		uSize := gl.GetUniformLocation(program, gl.Str("uSize"+"\x00"))
+		gl.Uniform2f(uSize, float32(width), float32(height))
+	}
 }
