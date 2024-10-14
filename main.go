@@ -13,9 +13,9 @@ import (
 
 var (
 	triangle = []float32{
-		1, 1, 0, // top right
-		1, -1, 0, // top left
-		-1, 1, 0, // bottom right
+		3, -1, 0, // top left
+		-1, 3, 0, // bottom right
+		-1, -1, 0, // bottom left
 	}
 	width  float32 = 1000
 	height float32 = 1000
@@ -62,6 +62,7 @@ func initOpenGL(window *glfw.Window) uint32 {
 	if err := gl.Init(); err != nil {
 		panic(err)
 	}
+
 	version := gl.GoStr(gl.GetString(gl.VERSION))
 	log.Println("OpenGL version", version)
 
