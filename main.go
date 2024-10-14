@@ -3,34 +3,12 @@ package main
 import (
 	"fmt"
 	"log"
+	"os"
 	"runtime"
 	"strings"
 
 	"github.com/go-gl/gl/v4.1-core/gl"
 	"github.com/go-gl/glfw/v3.3/glfw"
-)
-
-const (
-	vertexShaderSource = `
-    #version 460
-    in vec3 vp;
-
-    void main() {
-        gl_Position = vec4(vp, 1.0);
-    }
-` + "\x00"
-
-	fragmentShaderSource = `
-    #version 460
-    out vec4 frag_color;
-
-		uniform vec2 uSize;
-
-    void main() {
-  			vec2 color = gl_FragCoord.xy/uSize;
-        frag_color = vec4(color.xy, pow(1 - color.x * color.y, 2), 1);
-    }
-` + "\x00"
 )
 
 var (
@@ -87,11 +65,11 @@ func initOpenGL(window *glfw.Window) uint32 {
 	version := gl.GoStr(gl.GetString(gl.VERSION))
 	log.Println("OpenGL version", version)
 
-	vertexShader, err := compileShader(vertexShaderSource, gl.VERTEX_SHADER)
+	vertexShader, err := compileShader("./vert.glsl", gl.VERTEX_SHADER)
 	if err != nil {
 		panic(err)
 	}
-	fragmentShader, err := compileShader(fragmentShaderSource, gl.FRAGMENT_SHADER)
+	fragmentShader, err := compileShader("./frag.glsl", gl.FRAGMENT_SHADER)
 	if err != nil {
 		panic(err)
 	}
@@ -135,10 +113,15 @@ func makeVao(points []float32) uint32 {
 	return vao
 }
 
-func compileShader(source string, shaderType uint32) (uint32, error) {
+func compileShader(path string, shaderType uint32) (uint32, error) {
 	shader := gl.CreateShader(shaderType)
 
-	csources, free := gl.Strs(source)
+	source, err := os.ReadFile(path)
+	if err != nil {
+		return 0, fmt.Errorf("Failed to fetch shader: %s", err)
+	}
+
+	csources, free := gl.Strs(string(source) + "\x00")
 	gl.ShaderSource(shader, 1, csources, nil)
 	free()
 	gl.CompileShader(shader)
