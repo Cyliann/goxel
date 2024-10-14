@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"log"
+	// "log"
 	"os"
 	"runtime"
 	"strings"
@@ -63,8 +63,8 @@ func initOpenGL(window *glfw.Window) uint32 {
 		panic(err)
 	}
 
-	version := gl.GoStr(gl.GetString(gl.VERSION))
-	log.Println("OpenGL version", version)
+	// version := gl.GoStr(gl.GetString(gl.VERSION))
+	// log.Println("OpenGL version", version)
 
 	vertexShader, err := compileShader("./vert.glsl", gl.VERTEX_SHADER)
 	if err != nil {
