@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"time"
 	// "log"
 	"os"
 	"runtime"
@@ -31,7 +32,13 @@ func main() {
 
 	vao := makeVao(triangle)
 
+	timeStart := time.Now()
 	for !window.ShouldClose() {
+		uTime := gl.GetUniformLocation(program, gl.Str("uTime\x00"))
+		elapsedTime := float32(time.Since(timeStart))
+		gl.Uniform1f(uTime, elapsedTime/1000000000)
+		// fmt.Printf("%f\n", elapsedTime)
+
 		draw(vao, window, program)
 	}
 }

@@ -2,6 +2,8 @@
 out vec4 frag_color;
 
 uniform vec2 uSize;
+uniform float uTime;
+const float PI = 3.14159265359;
 
 vec3 raySphereIntersection(vec3 rayOrigin, vec3 rayDirection, float radius, vec3 lightDirection) {
     vec3 color = vec3(0);
@@ -19,7 +21,7 @@ vec3 raySphereIntersection(vec3 rayOrigin, vec3 rayDirection, float radius, vec3
     vec3 normal = normalize(hitPoint);
     float lighting = max(dot(normal, -lightDirection), 0);
 
-    color = vec3(1, 0, 1) * lighting;
+    color = vec3((sin(uTime * 2) + 1) / 2, (cos(uTime) + 1) / 2, (cos(uTime * 2) + 1) / 2) * lighting;
     return color;
 }
 
@@ -27,7 +29,8 @@ void main() {
     vec2 uv = (gl_FragCoord.xy * 2.0 - uSize) / uSize.y;
     vec3 rayOrigin = vec3(0, 0, 2);
     vec3 rayDirection = normalize(vec3(uv, -1));
-    vec3 lightDirection = normalize(vec3(-1));
+    vec3 lightDirection = normalize(vec3(sin(uTime), -1, cos(uTime)));
+    // frag_color = vec4(vec3(cos(uTime * PI) + 1) / 2, 1);
 
     frag_color = vec4(raySphereIntersection(rayOrigin, rayDirection, .7, lightDirection), 1);
 }
