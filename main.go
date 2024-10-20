@@ -2,14 +2,14 @@ package main
 
 import (
 	"fmt"
-	"time"
-	// "log"
 	"os"
 	"runtime"
 	"strings"
+	"time"
 
 	"github.com/go-gl/gl/v4.1-core/gl"
 	"github.com/go-gl/glfw/v3.3/glfw"
+	// . "github.com/tylerwince/godbg"
 )
 
 var (
@@ -37,7 +37,6 @@ func main() {
 		uTime := gl.GetUniformLocation(program, gl.Str("uTime\x00"))
 		elapsedTime := float32(time.Since(timeStart))
 		gl.Uniform1f(uTime, elapsedTime/1000000000)
-		// fmt.Printf("%f\n", elapsedTime)
 
 		draw(vao, window, program)
 	}
@@ -54,8 +53,10 @@ func initGlfw() *glfw.Window {
 	glfw.WindowHint(glfw.ContextVersionMinor, 6)
 	glfw.WindowHint(glfw.OpenGLProfile, glfw.OpenGLCoreProfile)
 	glfw.WindowHint(glfw.OpenGLForwardCompatible, glfw.True)
+	glfw.WindowHint(glfw.ScaleToMonitor, glfw.True)
+	monitor := glfw.GetPrimaryMonitor()
 
-	window, err := glfw.CreateWindow(int(width), int(height), "Goxel engine", nil, nil)
+	window, err := glfw.CreateWindow(int(width), int(height), "Goxel engine", monitor, nil)
 	if err != nil {
 		panic(err)
 	}
@@ -88,7 +89,10 @@ func initOpenGL(window *glfw.Window) uint32 {
 	gl.AttachShader(prog, fragmentShader)
 	gl.LinkProgram(prog)
 
-	window.SetSizeCallback(windowResizeWrapper(prog))
+	scale_x, scale_y := window.GetMonitor().GetContentScale()
+	window.SetSizeCallback(windowResizeCallback(prog, scale_x, scale_y))
+	fbheight, fbwidth := window.GetFramebufferSize()
+	gl.Viewport(0, 0, int32(fbheight), int32(fbwidth))
 
 	return prog
 }
@@ -150,10 +154,10 @@ func compileShader(path string, shaderType uint32) (uint32, error) {
 }
 
 // Returns a closure, so I can pass parameters to it (eg. program)
-func windowResizeWrapper(program uint32) func(*glfw.Window, int, int) {
+func windowResizeCallback(program uint32, scale_x float32, scale_y float32) func(*glfw.Window, int, int) {
 	return func(window *glfw.Window, width int, height int) {
-		gl.Viewport(0, 0, int32(width), int32(height))
+		gl.Viewport(0, 0, int32(float32(width)*scale_x), int32(float32(height)*scale_y))
 		uSize := gl.GetUniformLocation(program, gl.Str("uSize"+"\x00"))
-		gl.Uniform2f(uSize, float32(width), float32(height))
+		gl.Uniform2f(uSize, float32(width)*scale_x, float32(height)*scale_y)
 	}
 }
