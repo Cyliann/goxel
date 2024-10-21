@@ -32,4 +32,5 @@ void main() {
     vec3 lightDirection = -1 * normalize(vec3(sin(uTime * 2), 1, cos(uTime * 2)));
 
     frag_color = vec4(raySphereIntersection(rayOrigin, rayDirection, .7, lightDirection), 1);
+    // frag_color = vec4(1);
 }

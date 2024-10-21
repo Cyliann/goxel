@@ -34,11 +34,14 @@ func main() {
 
 	timeStart := time.Now()
 	for !window.ShouldClose() {
+		// frameTime := time.Now()
 		uTime := gl.GetUniformLocation(program, gl.Str("uTime\x00"))
 		elapsedTime := float32(time.Since(timeStart))
 		gl.Uniform1f(uTime, elapsedTime/1000000000)
 
 		draw(vao, window, program)
+		// fmt.Print("\033[H\033[2J")
+		// fmt.Printf("Frame time: %f", float32(time.Since(frameTime).Milliseconds()))
 	}
 }
 
@@ -54,9 +57,24 @@ func initGlfw() *glfw.Window {
 	glfw.WindowHint(glfw.OpenGLProfile, glfw.OpenGLCoreProfile)
 	glfw.WindowHint(glfw.OpenGLForwardCompatible, glfw.True)
 	glfw.WindowHint(glfw.ScaleToMonitor, glfw.True)
-	monitor := glfw.GetPrimaryMonitor()
+	glfw.WindowHint(glfw.OpenGLProfile, glfw.OpenGLCoreProfile)
+	glfw.WindowHint(glfw.OpenGLForwardCompatible, glfw.True)
 
-	window, err := glfw.CreateWindow(int(width), int(height), "Goxel engine", monitor, nil)
+	// Get the primary monitor
+	monitor := glfw.GetPrimaryMonitor()
+	videoMode := monitor.GetVideoMode()
+	if videoMode == nil {
+		panic("Failed to get monitor video mode")
+	}
+
+	// Get the available video modes and set the monitor to its native resolution
+	modes := monitor.GetVideoModes()
+	bestMode := findBestMode(modes, videoMode.Width, videoMode.Height, videoMode.RefreshRate)
+
+	// Print selected mode information (for debugging)
+	fmt.Printf("Monitor: %v, Selected Resolution: %dx%d @ %dHz\n", monitor.GetName(), bestMode.Width, bestMode.Height, bestMode.RefreshRate)
+
+	window, err := glfw.CreateWindow(bestMode.Width, bestMode.Height, "Goxel engine", monitor, nil)
 	if err != nil {
 		panic(err)
 	}
@@ -78,7 +96,7 @@ func initOpenGL(window *glfw.Window) uint32 {
 	if err != nil {
 		panic(err)
 	}
-	fragmentShader, err := compileShader("./frag.glsl", gl.FRAGMENT_SHADER)
+	fragmentShader, err := compileShader("./test.glsl", gl.FRAGMENT_SHADER)
 	if err != nil {
 		panic(err)
 	}
@@ -89,7 +107,7 @@ func initOpenGL(window *glfw.Window) uint32 {
 	gl.AttachShader(prog, fragmentShader)
 	gl.LinkProgram(prog)
 
-	scale_x, scale_y := window.GetMonitor().GetContentScale()
+	scale_x, scale_y := float32(1), float32(1) //window.GetMonitor().GetContentScale()
 	window.SetSizeCallback(windowResizeCallback(prog, scale_x, scale_y))
 	fbheight, fbwidth := window.GetFramebufferSize()
 	gl.Viewport(0, 0, int32(fbheight), int32(fbwidth))
@@ -160,4 +178,21 @@ func windowResizeCallback(program uint32, scale_x float32, scale_y float32) func
 		uSize := gl.GetUniformLocation(program, gl.Str("uSize"+"\x00"))
 		gl.Uniform2f(uSize, float32(width)*scale_x, float32(height)*scale_y)
 	}
+}
+
+// Utility function to find the best video mode based on resolution and refresh rate
+func findBestMode(modes []*glfw.VidMode, targetWidth, targetHeight, targetRefreshRate int) *glfw.VidMode {
+	var bestMode *glfw.VidMode
+	for _, mode := range modes {
+		// Try to match the target resolution and refresh rate
+		if mode.Width == targetWidth && mode.Height == targetHeight && mode.RefreshRate == targetRefreshRate {
+			bestMode = mode
+			break
+		}
+	}
+	// If we didn't find an exact match, fallback to the first available mode (shouldn't happen normally)
+	if bestMode == nil && len(modes) > 0 {
+		bestMode = modes[0]
+	}
+	return bestMode
 }
