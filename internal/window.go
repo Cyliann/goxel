@@ -18,11 +18,11 @@ var (
 		-1, 3, 0, // bottom right
 		-1, -1, 0, // bottom left
 	}
-	width  float32 = 1000
-	height float32 = 1000
 )
 
-func main() {
+type App struct{}
+
+func (self *App) Create() {
 	runtime.LockOSThread()
 
 	window := initGlfw()
@@ -92,11 +92,11 @@ func initOpenGL(window *glfw.Window) uint32 {
 	// version := gl.GoStr(gl.GetString(gl.VERSION))
 	// log.Println("OpenGL version", version)
 
-	vertexShader, err := compileShader("./vert.glsl", gl.VERTEX_SHADER)
+	vertexShader, err := compileShader("shaders/vert.glsl", gl.VERTEX_SHADER)
 	if err != nil {
 		panic(err)
 	}
-	fragmentShader, err := compileShader("./test.glsl", gl.FRAGMENT_SHADER)
+	fragmentShader, err := compileShader("shaders/frag.glsl", gl.FRAGMENT_SHADER)
 	if err != nil {
 		panic(err)
 	}
