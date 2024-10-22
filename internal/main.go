@@ -1,11 +1,13 @@
 package main
 
-import "runtime"
+import (
+	"Cyliann/goxel/internal/app"
+	"runtime"
+)
 
 func main() {
 	runtime.LockOSThread()
-	app := App{}
-	app.Create()
+	app := app.New()
 	app.Run()
 	defer app.Close()
 }

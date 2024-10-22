@@ -1,4 +1,4 @@
-package main
+package app
 
 import (
 	"fmt"
@@ -19,17 +19,21 @@ var (
 	}
 )
 
+// New creates a new app. Calls initGlfw() and initOpenGL().
+func New() App {
+	app := App{}
+
+	app.window = initGlfw()
+	app.program = initOpenGL(app.window)
+	app.vao = makeVao(triangle)
+
+	return app
+}
+
 type App struct {
 	window  *glfw.Window
 	program uint32
 	vao     uint32
-}
-
-// App.Create initializes the app. Calls initGlfw() and initOpenGL().
-func (self *App) Create() {
-	self.window = initGlfw()
-	self.program = initOpenGL(self.window)
-	self.vao = makeVao(triangle)
 }
 
 // App.Run is the main app loop. Polls events and calls App.draw()
@@ -37,8 +41,8 @@ func (self *App) Run() {
 	timeStart := time.Now()
 	for !self.window.ShouldClose() {
 		// frameTime := time.Now()
-		uTime := gl.GetUniformLocation(self.program, gl.Str("uTime\x00"))
 		elapsedTime := float32(time.Since(timeStart))
+		uTime := gl.GetUniformLocation(self.program, gl.Str("uTime\x00"))
 		gl.Uniform1f(uTime, elapsedTime/1000000000)
 
 		self.draw()
