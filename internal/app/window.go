@@ -1,7 +1,7 @@
 package app
 
 import (
-	"Cyliann/goxel/internal/player"
+	"Cyliann/goxel/internal/camera"
 	"fmt"
 	"os"
 	"strings"
@@ -9,7 +9,7 @@ import (
 
 	"github.com/go-gl/gl/v4.1-core/gl"
 	"github.com/go-gl/glfw/v3.3/glfw"
-	. "github.com/tylerwince/godbg"
+	// . "github.com/tylerwince/godbg"
 )
 
 var (
@@ -18,9 +18,6 @@ var (
 		-1, 3, 0, // bottom right
 		-1, -1, 0, // bottom left
 	}
-
-	// camera has to be a global var, because of the way glfw handles callbacks. If it is passed to closure through &self.camera then a copy is made and KeyCallback cannot modify it
-	camera = player.New()
 )
 
 // New creates a new app. Calls initGlfw() and initOpenGL().
@@ -31,6 +28,7 @@ func New() App {
 	app.program = initOpenGL()
 	app.vao = makeVao(triangle)
 	app.addCallbacks()
+	app.camera = camera.New()
 
 	return app
 }
@@ -39,6 +37,7 @@ type App struct {
 	window  *glfw.Window
 	program uint32
 	vao     uint32
+	camera  camera.Camera
 }
 
 // App.Run is the main app loop. Polls events and calls App.draw()
@@ -51,13 +50,13 @@ func (self *App) Run() {
 		gl.Uniform1f(uTime, elapsedTime/1000000000)
 
 		uPlayerPos := gl.GetUniformLocation(self.program, gl.Str("uPlayerPos\x00"))
-		gl.Uniform3f(uPlayerPos, camera.X, camera.Y, camera.Z)
+		gl.Uniform3f(uPlayerPos, self.camera.X, self.camera.Y, self.camera.Z)
 
 		self.draw()
 		glfw.PollEvents() // has to be after draw()
-		fmt.Print("\033[H\033[2J")
+		camera.HandleInput(&self.camera)
+		// fmt.Print("\033[H\033[2J")
 		// fmt.Printf("Frame time: %f", float32(time.Since(frameTime).Milliseconds()))
-		Dbg(camera.Z)
 	}
 }
 
@@ -75,8 +74,6 @@ func (self *App) draw() {
 func (self *App) addCallbacks() {
 	scale_x, scale_y := self.window.GetMonitor().GetContentScale()
 	self.window.SetSizeCallback(windowResizeCallback(self.program, scale_x, scale_y))
-
-	self.window.SetKeyCallback(player.KeyCallback(&camera))
 }
 
 // App.Close is run at the end of the program. Terminates the GLFW window.
