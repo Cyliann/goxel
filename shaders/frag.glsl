@@ -3,6 +3,7 @@ out vec4 frag_color;
 
 uniform vec2 uSize;
 uniform float uTime;
+uniform vec3 uPlayerPos;
 const float PI = 3.14159265359;
 
 vec3 raySphereIntersection(vec3 rayOrigin, vec3 rayDirection, float radius, vec3 lightDirection) {
@@ -27,7 +28,7 @@ vec3 raySphereIntersection(vec3 rayOrigin, vec3 rayDirection, float radius, vec3
 
 void main() {
     vec2 uv = (gl_FragCoord.xy * 2.0 - uSize) / uSize.y;
-    vec3 rayOrigin = vec3(0, 0, 2);
+    vec3 rayOrigin = uPlayerPos;
     vec3 rayDirection = normalize(vec3(uv, -1));
     vec3 lightDirection = -1 * normalize(vec3(sin(uTime * 2), 1, cos(uTime * 2)));
 

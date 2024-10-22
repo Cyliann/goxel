@@ -1,6 +1,7 @@
 package app
 
 import (
+	"Cyliann/goxel/internal/camera"
 	"fmt"
 	"os"
 	"strings"
@@ -26,6 +27,7 @@ func New() App {
 	app.window = initGlfw()
 	app.program = initOpenGL(app.window)
 	app.vao = makeVao(triangle)
+	app.camera = camera.New()
 
 	return app
 }
@@ -34,6 +36,7 @@ type App struct {
 	window  *glfw.Window
 	program uint32
 	vao     uint32
+	camera  camera.Camera
 }
 
 // App.Run is the main app loop. Polls events and calls App.draw()
@@ -44,6 +47,9 @@ func (self *App) Run() {
 		elapsedTime := float32(time.Since(timeStart))
 		uTime := gl.GetUniformLocation(self.program, gl.Str("uTime\x00"))
 		gl.Uniform1f(uTime, elapsedTime/1000000000)
+
+		uPlayerPos := gl.GetUniformLocation(self.program, gl.Str("uPlayerPos\x00"))
+		gl.Uniform3f(uPlayerPos, self.camera.X, self.camera.Y, self.camera.Z)
 
 		self.draw()
 		glfw.PollEvents() // has to be after draw()
