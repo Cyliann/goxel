@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"os"
-	"runtime"
 	"strings"
 	"time"
 
@@ -20,29 +19,49 @@ var (
 	}
 )
 
-type App struct{}
+type App struct {
+	window  *glfw.Window
+	program uint32
+	vao     uint32
+}
 
+// App.Create initializes the app. Calls initGlfw() and initOpenGL().
 func (self *App) Create() {
-	runtime.LockOSThread()
+	self.window = initGlfw()
+	self.program = initOpenGL(self.window)
+	self.vao = makeVao(triangle)
+}
 
-	window := initGlfw()
-	defer glfw.Terminate()
-
-	program := initOpenGL(window)
-
-	vao := makeVao(triangle)
-
+// App.Run is the main app loop. Polls events and calls App.draw()
+func (self *App) Run() {
 	timeStart := time.Now()
-	for !window.ShouldClose() {
+	for !self.window.ShouldClose() {
 		// frameTime := time.Now()
-		uTime := gl.GetUniformLocation(program, gl.Str("uTime\x00"))
+		uTime := gl.GetUniformLocation(self.program, gl.Str("uTime\x00"))
 		elapsedTime := float32(time.Since(timeStart))
 		gl.Uniform1f(uTime, elapsedTime/1000000000)
 
-		draw(vao, window, program)
+		self.draw()
+		glfw.PollEvents() // has to be after draw()
 		// fmt.Print("\033[H\033[2J")
 		// fmt.Printf("Frame time: %f", float32(time.Since(frameTime).Milliseconds()))
 	}
+}
+
+// App.draw redraws frames
+func (self *App) draw() {
+	gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
+
+	gl.BindVertexArray(self.vao)
+	gl.DrawArrays(gl.TRIANGLES, 0, int32(len(triangle)/3))
+	gl.UseProgram(self.program)
+
+	self.window.SwapBuffers()
+}
+
+// App.Close is run at the end of the program. Terminates the GLFW window.
+func (self *App) Close() {
+	glfw.Terminate()
 }
 
 // initGlfw initializes glfw and returns a Window to use.
@@ -107,23 +126,12 @@ func initOpenGL(window *glfw.Window) uint32 {
 	gl.AttachShader(prog, fragmentShader)
 	gl.LinkProgram(prog)
 
-	scale_x, scale_y := float32(1), float32(1) //window.GetMonitor().GetContentScale()
+	scale_x, scale_y := window.GetMonitor().GetContentScale()
 	window.SetSizeCallback(windowResizeCallback(prog, scale_x, scale_y))
 	fbheight, fbwidth := window.GetFramebufferSize()
 	gl.Viewport(0, 0, int32(fbheight), int32(fbwidth))
 
 	return prog
-}
-
-func draw(vao uint32, window *glfw.Window, program uint32) {
-	gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
-
-	gl.BindVertexArray(vao)
-	gl.DrawArrays(gl.TRIANGLES, 0, int32(len(triangle)/3))
-	gl.UseProgram(program)
-
-	glfw.PollEvents()
-	window.SwapBuffers()
 }
 
 // makeVao initializes and returns a vertex array from the points provided.
@@ -143,6 +151,7 @@ func makeVao(points []float32) uint32 {
 	return vao
 }
 
+// compiles the given shader from path and returns it as a memory address.
 func compileShader(path string, shaderType uint32) (uint32, error) {
 	shader := gl.CreateShader(shaderType)
 
