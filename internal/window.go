@@ -128,8 +128,6 @@ func initOpenGL(window *glfw.Window) uint32 {
 
 	scale_x, scale_y := window.GetMonitor().GetContentScale()
 	window.SetSizeCallback(windowResizeCallback(prog, scale_x, scale_y))
-	fbheight, fbwidth := window.GetFramebufferSize()
-	gl.Viewport(0, 0, int32(fbheight), int32(fbwidth))
 
 	return prog
 }
@@ -180,7 +178,7 @@ func compileShader(path string, shaderType uint32) (uint32, error) {
 	return shader, nil
 }
 
-// Returns a closure, so I can pass parameters to it (eg. program)
+// Returns a closure, so you can pass parameters to it (eg. program)
 func windowResizeCallback(program uint32, scale_x float32, scale_y float32) func(*glfw.Window, int, int) {
 	return func(window *glfw.Window, width int, height int) {
 		gl.Viewport(0, 0, int32(float32(width)*scale_x), int32(float32(height)*scale_y))
