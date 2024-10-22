@@ -1,4 +1,4 @@
-package camera
+package player
 
 type Camera struct {
 	X     float32
