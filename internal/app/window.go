@@ -50,11 +50,14 @@ func (self *App) Run() {
 		gl.Uniform1f(uTime, elapsedTime/1000000000)
 
 		uPlayerPos := gl.GetUniformLocation(self.program, gl.Str("uPlayerPos\x00"))
-		gl.Uniform3f(uPlayerPos, self.camera.X, self.camera.Y, self.camera.Z)
+		gl.Uniform3f(uPlayerPos, self.camera.Pos.X(), self.camera.Pos.Y(), self.camera.Pos.Z())
 
 		self.draw()
 		glfw.PollEvents() // has to be after draw()
-		camera.HandleInput(self.window)
+		shouldUpdate := self.camera.HandleInput(self.window)
+		if shouldUpdate {
+			self.camera.UpdateView()
+		}
 		// fmt.Print("\033[H\033[2J")
 		// fmt.Printf("Frame time: %f", float32(time.Since(frameTime).Milliseconds()))
 	}
