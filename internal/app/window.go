@@ -28,7 +28,7 @@ func New() App {
 	app.program = initOpenGL()
 	app.vao = makeVao(triangle)
 	app.addCallbacks()
-	app.camera = camera.New()
+	app.camera = camera.New(app.window)
 
 	return app
 }
@@ -54,7 +54,7 @@ func (self *App) Run() {
 
 		self.draw()
 		glfw.PollEvents() // has to be after draw()
-		camera.HandleInput(&self.camera)
+		camera.HandleInput(self.window)
 		// fmt.Print("\033[H\033[2J")
 		// fmt.Printf("Frame time: %f", float32(time.Since(frameTime).Milliseconds()))
 	}

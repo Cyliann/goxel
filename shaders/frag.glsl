@@ -7,7 +7,7 @@ uniform vec3 uPlayerPos;
 const float PI = 3.14159265359;
 
 vec3 raySphereIntersection(vec3 rayOrigin, vec3 rayDirection, float radius, vec3 lightDirection) {
-    vec3 color = vec3(0); //vec3(0.53, 0.81, 0.94);
+    vec3 color = vec3(0.53, 0.81, 0.94);
     float a = dot(rayDirection, rayDirection);
     float b = 2.0 * dot(rayOrigin, rayDirection);
     float c = dot(rayOrigin, rayOrigin) - pow(radius, 2);
