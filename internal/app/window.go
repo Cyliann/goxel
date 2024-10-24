@@ -46,18 +46,13 @@ func (self *App) Run() {
 	for !self.window.ShouldClose() {
 		// frameTime := time.Now()
 		elapsedTime := float32(time.Since(timeStart))
-		uTime := gl.GetUniformLocation(self.program, gl.Str("uTime\x00"))
-		gl.Uniform1f(uTime, elapsedTime/1000000000)
-
-		uPlayerPos := gl.GetUniformLocation(self.program, gl.Str("uPlayerPos\x00"))
-		gl.Uniform3f(uPlayerPos, self.camera.Pos.X(), self.camera.Pos.Y(), self.camera.Pos.Z())
-
 		self.draw()
 		glfw.PollEvents() // has to be after draw()
 		shouldUpdate := self.camera.HandleInput(self.window)
 		if shouldUpdate {
 			self.camera.Update()
 		}
+		self.updateUniforms(elapsedTime)
 		// fmt.Print("\033[H\033[2J")
 		// fmt.Printf("Frame time: %f", float32(time.Since(frameTime).Milliseconds()))
 	}
@@ -77,6 +72,20 @@ func (self *App) draw() {
 func (self *App) addCallbacks() {
 	scale_x, scale_y := self.window.GetMonitor().GetContentScale()
 	self.window.SetSizeCallback(windowResizeCallback(self.program, scale_x, scale_y))
+}
+
+func (self *App) updateUniforms(elapsedTime float32) {
+	uTime := gl.GetUniformLocation(self.program, gl.Str("uTime\x00"))
+	gl.Uniform1f(uTime, elapsedTime/1000000000)
+
+	uPlayerPos := gl.GetUniformLocation(self.program, gl.Str("uPlayerPos\x00"))
+	gl.Uniform3f(uPlayerPos, self.camera.Pos.X(), self.camera.Pos.Y(), self.camera.Pos.Z())
+
+	uInvView := gl.GetUniformLocation(self.program, gl.Str("uInvView\x00"))
+	gl.UniformMatrix4fv(uInvView, 1, false, &self.camera.InverseView[0]) // pass the pointer to the first element. The rest is calculated by opengl
+
+	uInvProj := gl.GetUniformLocation(self.program, gl.Str("uInvProj\x00"))
+	gl.UniformMatrix4fv(uInvProj, 1, false, &self.camera.InverseProj[0]) // pass the pointer to the first element. The rest is calculated by opengl
 }
 
 // App.Close is run at the end of the program. Terminates the GLFW window.
