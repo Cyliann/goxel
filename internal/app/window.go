@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/charmbracelet/log"
 	"github.com/go-gl/gl/v4.1-core/gl"
 	"github.com/go-gl/glfw/v3.3/glfw"
 	// . "github.com/tylerwince/godbg"
@@ -29,6 +30,7 @@ func New() App {
 	app.vao = makeVao(triangle)
 	app.addCallbacks()
 	app.camera = camera.New(app.window)
+	log.Debug(app.camera.InverseView)
 
 	return app
 }
@@ -120,7 +122,7 @@ func initGlfw() *glfw.Window {
 	bestMode := findBestMode(modes, videoMode.Width, videoMode.Height, videoMode.RefreshRate)
 
 	// Print selected mode information (for debugging)
-	fmt.Printf("Monitor: %v, Selected Resolution: %dx%d @ %dHz\n", monitor.GetName(), bestMode.Width, bestMode.Height, bestMode.RefreshRate)
+	log.Debugf("Monitor: %v, Selected Resolution: %dx%d @ %dHz\n", monitor.GetName(), bestMode.Width, bestMode.Height, bestMode.RefreshRate)
 
 	window, err := glfw.CreateWindow(bestMode.Width, bestMode.Height, "Goxel engine", monitor, nil)
 	if err != nil {
@@ -142,11 +144,13 @@ func initOpenGL() uint32 {
 
 	vertexShader, err := compileShader("shaders/vert.glsl", gl.VERTEX_SHADER)
 	if err != nil {
-		panic(err)
+		log.Error(err)
+		panic(nil)
 	}
 	fragmentShader, err := compileShader("shaders/frag.glsl", gl.FRAGMENT_SHADER)
 	if err != nil {
-		panic(err)
+		log.Error(err)
+		panic(nil)
 	}
 
 	prog := gl.CreateProgram()
@@ -195,10 +199,10 @@ func compileShader(path string, shaderType uint32) (uint32, error) {
 		var logLength int32
 		gl.GetShaderiv(shader, gl.INFO_LOG_LENGTH, &logLength)
 
-		log := strings.Repeat("\x00", int(logLength+1))
-		gl.GetShaderInfoLog(shader, logLength, nil, gl.Str(log))
+		error := strings.Repeat("\x00", int(logLength+1))
+		gl.GetShaderInfoLog(shader, logLength, nil, gl.Str(error))
 
-		return 0, fmt.Errorf("failed to compile %v: %v", source, log)
+		return 0, fmt.Errorf("failed to compile %v: %v", string(source), error)
 	}
 
 	return shader, nil

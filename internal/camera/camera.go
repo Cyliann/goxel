@@ -33,14 +33,14 @@ func New(window *glfw.Window) Camera {
 		45,                                 // fov
 		0,                                  // nearclip
 		0,                                  // farclip
-		mgl32.Mat4{},
-		mgl32.Mat4{},
+		mgl32.Ident2().Mat4(),
+		mgl32.Ident2().Mat4(),
 	}
 }
 
 // Handles mouse and keyboard input. Modifies camera fields
 func (self *Camera) HandleInput(window *glfw.Window) bool {
-	var speed float32 = 0.3
+	var speed float32 = 0.2
 	up_dir := mgl32.Vec3{0, 1, 0}
 	right_dir := self.Direction.Cross(up_dir)
 
@@ -101,12 +101,13 @@ func (self *Camera) HandleInput(window *glfw.Window) bool {
 func (self *Camera) Update() {
 	up_dir := mgl32.Vec3{0, 1, 0}
 	right_dir := self.Direction.Cross(up_dir)
+	var speed float32 = 0.01
 
 	// Create quaternion for pitch (rotation around the right axis)
-	quatPitch := AngleAxis(self.pitchDelta, right_dir)
+	quatPitch := AngleAxis(self.pitchDelta*speed, right_dir)
 
 	// Create quaternion for yaw (rotation around the up axis, which is (0, 1, 0))
-	quatYaw := AngleAxis(self.yawDelta, mgl32.Vec3{0, 1, 0})
+	quatYaw := AngleAxis(self.yawDelta*speed, mgl32.Vec3{0, 1, 0})
 
 	// Normalize the resulting quaternion
 	quat := quatPitch.Mul(quatYaw).Normalize()
