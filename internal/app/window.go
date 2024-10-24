@@ -56,7 +56,7 @@ func (self *App) Run() {
 		glfw.PollEvents() // has to be after draw()
 		shouldUpdate := self.camera.HandleInput(self.window)
 		if shouldUpdate {
-			self.camera.UpdateView()
+			self.camera.Update()
 		}
 		// fmt.Print("\033[H\033[2J")
 		// fmt.Printf("Frame time: %f", float32(time.Since(frameTime).Milliseconds()))

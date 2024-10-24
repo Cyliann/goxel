@@ -8,14 +8,16 @@ import (
 )
 
 type Camera struct {
-	Pos        mgl32.Vec3
-	Direction  mgl32.Vec3
-	MousePos   mgl32.Vec2
-	pitchDelta float32
-	yawDelta   float32
-	Fov        float32
-	NearClip   float32
-	FarClip    float32
+	Pos         mgl32.Vec3
+	Direction   mgl32.Vec3
+	MousePos    mgl32.Vec2
+	pitchDelta  float32
+	yawDelta    float32
+	Fov         float32
+	NearClip    float32
+	FarClip     float32
+	InverseView mgl32.Mat4
+	InverseProj mgl32.Mat4
 }
 
 func New(window *glfw.Window) Camera {
@@ -31,6 +33,8 @@ func New(window *glfw.Window) Camera {
 		45,                                 // fov
 		0,                                  // nearclip
 		0,                                  // farclip
+		mgl32.Mat4{},
+		mgl32.Mat4{},
 	}
 }
 
@@ -94,7 +98,7 @@ func (self *Camera) HandleInput(window *glfw.Window) bool {
 	return shouldUpdate
 }
 
-func (self *Camera) UpdateView() {
+func (self *Camera) Update() {
 	up_dir := mgl32.Vec3{0, 1, 0}
 	right_dir := self.Direction.Cross(up_dir)
 
@@ -109,6 +113,32 @@ func (self *Camera) UpdateView() {
 
 	// Rotate the forward direction using the quaternion
 	self.Direction = quat.Rotate(self.Direction)
+
+	self.recalculateView()
+}
+
+func (self *Camera) recalculateView() {
+	// For some reason mgl32 expects 9 floats instead of 3 vecs, and go doesn't support tuple unpacking
+	self.InverseView = mgl32.LookAt(
+		self.Pos[0],
+		self.Pos[1],
+		self.Pos[2],
+		self.Pos.Add(self.Direction)[0],
+		self.Pos.Add(self.Direction)[1],
+		self.Pos.Add(self.Direction)[2],
+		0, // up_dir x
+		1, // up_dir y
+		0, // up_dir z
+	).Inv()
+}
+
+func (self *Camera) recalculateProjection(window *glfw.Window) {
+	self.InverseProj = mgl32.Perspective(
+		mgl32.DegToRad(self.Fov),
+		float32(window.GetMonitor().GetVideoMode().Width/window.GetMonitor().GetVideoMode().Height), // aspect ratio
+		self.NearClip,
+		self.FarClip,
+	).Inv()
 }
 
 func AngleAxis(angle float32, axis mgl32.Vec3) mgl32.Quat {
