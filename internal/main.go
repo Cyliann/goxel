@@ -7,9 +7,12 @@ import (
 	"github.com/charmbracelet/log"
 )
 
-func main() {
+func init() {
 	log.SetLevel(log.DebugLevel)
 	runtime.LockOSThread()
+}
+
+func main() {
 	app := app.New()
 	app.Run()
 	defer app.Close()
