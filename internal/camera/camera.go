@@ -30,9 +30,9 @@ func New(window *glfw.Window) Camera {
 		mgl32.Vec2{float32(x), float32(y)}, // mous pos
 		0,                                  // pitch
 		0,                                  // yaw
-		45,                                 // fov
-		0,                                  // nearclip
-		0,                                  // farclip
+		90,                                 // fov
+		1,                                  // nearclip
+		100,                                // farclip
 		mgl32.Ident2().Mat4(),
 		mgl32.Ident2().Mat4(),
 	}
@@ -46,8 +46,8 @@ func (self *Camera) HandleInput(window *glfw.Window) bool {
 
 	shouldUpdate := false
 	x, y := window.GetCursorPos()
-	self.yawDelta = float32(x) - self.MousePos[0]
-	self.pitchDelta = float32(y) - self.MousePos[1]
+	self.yawDelta = self.MousePos[0] - float32(x)
+	self.pitchDelta = self.MousePos[1] - float32(y)
 
 	if self.yawDelta != 0 {
 		self.MousePos[0] = float32(x)
@@ -98,7 +98,7 @@ func (self *Camera) HandleInput(window *glfw.Window) bool {
 	return shouldUpdate
 }
 
-func (self *Camera) Update() {
+func (self *Camera) Update(window *glfw.Window) {
 	up_dir := mgl32.Vec3{0, 1, 0}
 	right_dir := self.Direction.Cross(up_dir)
 	var speed float32 = 0.01
@@ -116,6 +116,7 @@ func (self *Camera) Update() {
 	self.Direction = quat.Rotate(self.Direction)
 
 	self.recalculateView()
+	self.recalculateProjection(window)
 }
 
 func (self *Camera) recalculateView() {

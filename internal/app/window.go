@@ -30,7 +30,6 @@ func New() App {
 	app.vao = makeVao(triangle)
 	app.addCallbacks()
 	app.camera = camera.New(app.window)
-	log.Debug(app.camera.InverseView)
 
 	return app
 }
@@ -45,6 +44,7 @@ type App struct {
 // App.Run is the main app loop. Polls events and calls App.draw()
 func (self *App) Run() {
 	timeStart := time.Now()
+	self.camera.Update(self.window) // update for the first time to set up matrices
 	for !self.window.ShouldClose() {
 		// frameTime := time.Now()
 		elapsedTime := float32(time.Since(timeStart))
@@ -52,7 +52,7 @@ func (self *App) Run() {
 		glfw.PollEvents() // has to be after draw()
 		shouldUpdate := self.camera.HandleInput(self.window)
 		if shouldUpdate {
-			self.camera.Update()
+			self.camera.Update(self.window)
 		}
 		self.updateUniforms(elapsedTime)
 		// fmt.Print("\033[H\033[2J")

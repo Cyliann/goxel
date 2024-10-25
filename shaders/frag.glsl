@@ -20,6 +20,10 @@ vec3 raySphereIntersection(vec3 rayOrigin, vec3 rayDirection, float radius, vec3
     }
 
     float d = (-b - sqrt(discriminant)) / (2 * a);
+    if (d < 0) {
+        return color;
+    }
+
     vec3 hitPoint = rayOrigin + rayDirection * d;
     vec3 normal = normalize(hitPoint);
     float lighting = max(dot(normal, -lightDirection), 0);
@@ -37,5 +41,4 @@ void main() {
     vec3 lightDirection = -1 * normalize(vec3(sin(uTime * 2), 1, cos(uTime * 2)));
 
     frag_color = vec4(raySphereIntersection(rayOrigin, rayDirection, .7, lightDirection), 1);
-    // frag_color = vec4(1);
 }
