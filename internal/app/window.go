@@ -56,24 +56,22 @@ func initGlfw() *glfw.Window {
 	return window
 }
 
-// initOpenGL initializes OpenGL and returns an intiialized program.
+// initOpenGL initializes OpenGL and returns an intiialized program and a fragment shader.
 func initOpenGL() uint32 {
 	if err := gl.Init(); err != nil {
 		panic(err)
 	}
 
-	// version := gl.GoStr(gl.GetString(gl.VERSION))
-	// log.Println("OpenGL version", version)
+	version := gl.GoStr(gl.GetString(gl.VERSION))
+	log.Debugf("OpenGL version: %v", version)
 
 	vertexShader, err := compileShader("shaders/vert.glsl", gl.VERTEX_SHADER)
 	if err != nil {
-		log.Error(err)
-		panic(nil)
+		panic(err)
 	}
 	fragmentShader, err := compileShader("shaders/frag.glsl", gl.FRAGMENT_SHADER)
 	if err != nil {
-		log.Error(err)
-		panic(nil)
+		panic(err)
 	}
 
 	prog := gl.CreateProgram()
@@ -155,4 +153,26 @@ func findBestMode(modes []*glfw.VidMode, targetWidth, targetHeight, targetRefres
 		bestMode = modes[0]
 	}
 	return bestMode
+}
+
+func reloadShaders(app *App) error {
+	vertexShader, err := compileShader("shaders/vert.glsl", gl.VERTEX_SHADER)
+	if err != nil {
+		return err
+	}
+	fragmentShader, err := compileShader("shaders/frag.glsl", gl.FRAGMENT_SHADER)
+	if err != nil {
+		return err
+	}
+
+	prog := gl.CreateProgram()
+
+	gl.AttachShader(prog, vertexShader)
+	gl.AttachShader(prog, fragmentShader)
+	gl.LinkProgram(prog)
+
+	app.program = prog
+	log.Debug("Reloaded: ", "Program", app.program, "frag", fragmentShader)
+
+	return nil
 }

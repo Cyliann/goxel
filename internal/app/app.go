@@ -37,7 +37,7 @@ func (self *App) Run() {
 		elapsedTime := float32(time.Since(timeStart))
 		self.draw()
 		glfw.PollEvents() // has to be after draw()
-		shouldUpdate := self.camera.HandleInput(self.window)
+		shouldUpdate := self.HandleInput()
 		if shouldUpdate {
 			self.camera.Update(self.window)
 		}
@@ -57,7 +57,6 @@ func (self *App) draw() {
 
 	self.window.SwapBuffers()
 }
-
 func (self *App) addCallbacks() {
 	scale_x, scale_y := self.window.GetMonitor().GetContentScale()
 	self.window.SetSizeCallback(windowResizeCallback(self.program, scale_x, scale_y))
