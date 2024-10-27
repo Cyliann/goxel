@@ -57,6 +57,7 @@ func (self *App) draw() {
 
 	self.window.SwapBuffers()
 }
+
 func (self *App) addCallbacks() {
 	scale_x, scale_y := self.window.GetMonitor().GetContentScale()
 	self.window.SetSizeCallback(windowResizeCallback(self.program, scale_x, scale_y))

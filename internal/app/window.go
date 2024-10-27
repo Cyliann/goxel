@@ -170,9 +170,20 @@ func reloadShaders(app *App) error {
 	gl.AttachShader(prog, vertexShader)
 	gl.AttachShader(prog, fragmentShader)
 	gl.LinkProgram(prog)
+	gl.UseProgram(prog)
 
 	app.program = prog
+	forceSizeUpdate(app)
 	log.Debug("Reloaded: ", "Program", app.program, "frag", fragmentShader)
 
 	return nil
+}
+
+// Manualy sets uSize uniform
+func forceSizeUpdate(app *App) {
+	scale_x, scale_y := app.window.GetMonitor().GetContentScale()
+	width := app.window.GetMonitor().GetVideoMode().Width
+	height := app.window.GetMonitor().GetVideoMode().Height
+
+	windowResizeCallback(app.program, scale_x, scale_y)(app.window, width-1, height-1)
 }
