@@ -79,6 +79,7 @@ func initOpenGL() uint32 {
 	gl.AttachShader(prog, vertexShader)
 	gl.AttachShader(prog, fragmentShader)
 	gl.LinkProgram(prog)
+	gl.UseProgram(prog)
 
 	return prog
 }
@@ -170,7 +171,6 @@ func reloadShaders(app *App) error {
 	gl.AttachShader(prog, vertexShader)
 	gl.AttachShader(prog, fragmentShader)
 	gl.LinkProgram(prog)
-	gl.UseProgram(prog)
 
 	app.program = prog
 	forceSizeUpdate(app)
