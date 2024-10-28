@@ -64,11 +64,16 @@ func (self *App) HandleInput() bool {
 		shouldUpdate = true
 	}
 
-	if self.window.GetKey(glfw.KeyR) == glfw.Press {
+	if self.window.GetKey(glfw.KeyR) == glfw.Press && !self.shaderReloading {
+		self.shaderReloading = true
 		err := reloadShaders(self)
 		if err != nil {
 			log.Errorf("Reload failed with: %v", err)
 		}
+	}
+
+	if self.window.GetKey(glfw.KeyR) == glfw.Release {
+		self.shaderReloading = false
 	}
 
 	return shouldUpdate

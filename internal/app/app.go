@@ -10,7 +10,7 @@ import (
 
 // New creates a new app. Calls initGlfw() and initOpenGL().
 func New() App {
-	app := App{}
+	app := App{shaderReloading: false}
 
 	app.window = initGlfw()
 	app.program = initOpenGL()
@@ -22,10 +22,11 @@ func New() App {
 }
 
 type App struct {
-	window  *glfw.Window
-	program uint32
-	vao     uint32
-	camera  camera.Camera
+	window          *glfw.Window
+	program         uint32
+	vao             uint32
+	camera          camera.Camera
+	shaderReloading bool
 }
 
 // App.Run is the main app loop. Polls events and calls App.draw()
