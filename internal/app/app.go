@@ -4,6 +4,7 @@ import (
 	"Cyliann/goxel/internal/camera"
 	"time"
 
+	"github.com/charmbracelet/log"
 	"github.com/go-gl/gl/v4.1-core/gl"
 	"github.com/go-gl/glfw/v3.3/glfw"
 )
@@ -54,7 +55,6 @@ func (self *App) draw() {
 
 	gl.BindVertexArray(self.vao)
 	gl.DrawArrays(gl.TRIANGLES, 0, int32(len(triangle)/3))
-	gl.UseProgram(self.program)
 
 	self.window.SwapBuffers()
 }
@@ -76,6 +76,30 @@ func (self *App) updateUniforms(elapsedTime float32) {
 
 	uInvProj := gl.GetUniformLocation(self.program, gl.Str("uInvProj\x00"))
 	gl.UniformMatrix4fv(uInvProj, 1, false, &self.camera.InverseProj[0]) // pass the pointer to the first element. The rest is calculated by opengl
+}
+
+func reloadShaders(app *App) error {
+	vertexShader, err := compileShader("shaders/vert.glsl", gl.VERTEX_SHADER)
+	if err != nil {
+		return err
+	}
+	fragmentShader, err := compileShader("shaders/frag.glsl", gl.FRAGMENT_SHADER)
+	if err != nil {
+		return err
+	}
+
+	prog := gl.CreateProgram()
+
+	gl.AttachShader(prog, vertexShader)
+	gl.AttachShader(prog, fragmentShader)
+	gl.LinkProgram(prog)
+	gl.UseProgram(prog)
+
+	app.program = prog
+	forceSizeUpdate(app)
+	log.Debug("Reloaded: ", "Program", app.program, "frag", fragmentShader)
+
+	return nil
 }
 
 // App.Close is run at the end of the program. Terminates the GLFW window.
