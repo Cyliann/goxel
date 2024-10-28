@@ -82,3 +82,31 @@ func compileShader(path string, shaderType uint32) (uint32, error) {
 
 	return shader, nil
 }
+
+// Creates a 3D texture
+func createTexture() uint32 {
+	var textureID uint32
+	gl.GenTextures(1, &textureID)
+	gl.BindTexture(gl.TEXTURE_3D, textureID)
+	gl.TexImage3D(gl.TEXTURE_3D, 0, gl.RED, 4, 4, 4, 0, gl.RED, gl.UNSIGNED_BYTE, gl.Ptr([]byte{
+		// 4x4x4 texture data
+		1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0,
+		1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0,
+		1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0,
+		1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0,
+	}))
+	gl.TexParameteri(gl.TEXTURE_3D, gl.TEXTURE_MIN_FILTER, gl.NEAREST)
+	gl.TexParameteri(gl.TEXTURE_3D, gl.TEXTURE_MAG_FILTER, gl.NEAREST)
+	gl.BindTexture(gl.TEXTURE_3D, 0)
+
+	return textureID
+}
+
+// Passes the 3D texture to the shader
+func sendTexture(textureID uint32, program uint32) {
+	gl.BindTexture(gl.TEXTURE_3D, textureID)
+	textureUniformLocation := gl.GetUniformLocation(program, gl.Str("voxelMap\x00"))
+	gl.Uniform1i(textureUniformLocation, 0)
+	gl.ActiveTexture(gl.TEXTURE0)
+	gl.BindTexture(gl.TEXTURE_3D, textureID)
+}

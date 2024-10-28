@@ -18,6 +18,8 @@ func New() App {
 	app.vao = makeVao(triangle)
 	app.addCallbacks()
 	app.camera = camera.New(app.window)
+	textureID := createTexture()
+	sendTexture(textureID, app.program)
 
 	return app
 }
