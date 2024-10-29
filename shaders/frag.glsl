@@ -1,8 +1,8 @@
 #version 460
 out vec4 frag_color;
 
-const int WORLD_SIZE = 4;
-const int MAX_RAY_STEPS = 64;
+const int WORLD_SIZE = 32;
+const int MAX_RAY_STEPS = 128;
 uniform vec2 uSize;
 uniform float uTime;
 uniform vec3 uPlayerPos;
@@ -12,7 +12,7 @@ uniform mat4 uInvProj;
 uniform sampler3D voxelMap;
 
 bool getVoxel(ivec3 mapPos) {
-    return texture(voxelMap, vec3(mapPos) / 4).r == 1;
+    return texture(voxelMap, vec3(mapPos) / WORLD_SIZE).r == 1;
 }
 
 bvec3 dda(vec3 rayOrigin, vec3 rayDir) {
