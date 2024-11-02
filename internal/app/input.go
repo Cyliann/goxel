@@ -8,7 +8,7 @@ import (
 
 // Handles mouse and keyboard input. Modifies camera fields
 func (self *App) HandleInput() bool {
-	var keyboardSpeed float32 = 0.1
+	var keyboardSpeed float32 = 0.5
 	var mouseSpeed float32 = 0.01
 	up_dir := mgl32.Vec3{0, 1, 0}
 	right_dir := self.camera.Direction.Cross(up_dir)
