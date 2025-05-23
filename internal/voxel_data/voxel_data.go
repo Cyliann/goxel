@@ -6,12 +6,13 @@ const WORLD_SIZE = 32
 
 type OctreeNode struct {
 	Children [8]*OctreeNode
-	IsLeaf   bool
+	IsLeaf   int32
 }
 
 type FlatNode struct {
-	ChildIndices [8]int32 // -1 if no child
-	IsLeaf       bool
+	ChildIndices [8]int32 // -1 if no child; 32 bytes
+	IsLeaf       int32    //4 bytes
+	_            [3]int32 // 12 bytes padding
 }
 
 func GetVoxels() []FlatNode {
@@ -82,16 +83,16 @@ func buildRecursive(data [WORLD_SIZE * WORLD_SIZE * WORLD_SIZE]float32, ox, oy, 
 		return nil // Skip empty space
 	}
 	if size == 1 || !full {
-		return &OctreeNode{IsLeaf: true}
+		return &OctreeNode{IsLeaf: 1}
 	}
 
 	// Otherwise, subdivide
 	node := &OctreeNode{}
 	half := size / 2
 	index := 0
-	for dz := 0; dz < 2; dz++ {
-		for dy := 0; dy < 2; dy++ {
-			for dx := 0; dx < 2; dx++ {
+	for dz := range 2 {
+		for dy := range 2 {
+			for dx := range 2 {
 				cx := ox + dx*half
 				cy := oy + dy*half
 				cz := oz + dz*half

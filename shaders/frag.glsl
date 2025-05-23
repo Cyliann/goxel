@@ -1,7 +1,6 @@
 #version 460
 out vec4 frag_color;
 
-const int WORLD_SIZE = 32;
 const int MAX_RAY_STEPS = 128;
 uniform vec2 uSize;
 uniform float uTime;
@@ -9,10 +8,43 @@ uniform vec3 uPlayerPos;
 const float PI = 3.14159265359;
 uniform mat4 uInvView;
 uniform mat4 uInvProj;
-uniform sampler3D voxelMap;
+
+struct FlatNode {
+    int child_indices[8]; // -1 means no child
+    int is_leaf; // 1 for leaf, 0 otherwise
+    // optional: int data; for voxel value
+};
+
+layout(std430, binding = 0) buffer OctreeBuffer {
+    FlatNode nodes[];
+};
 
 bool getVoxel(ivec3 mapPos) {
-    return texture(voxelMap, vec3(mapPos) / WORLD_SIZE).r == 1;
+    int size = WORLD_SIZE;
+    ivec3 origin = ivec3(0);
+    int index = 0; // root index
+
+    while (true) {
+        FlatNode node = nodes[index];
+
+        // If we're at a leaf, voxel is present
+        if (node.is_leaf == 1) return true;
+
+        int half = size / 2;
+        int child = 0;
+        if (mapPos.x >= origin.x + half) child += 1;
+        if (mapPos.y >= origin.y + half) child += 2;
+        if (mapPos.z >= origin.z + half) child += 4;
+
+        index = node.child_indices[child];
+        if (index == -1) return false;
+
+        // Update bounds
+        if ((child & 1) != 0) origin.x += half;
+        if ((child & 2) != 0) origin.y += half;
+        if ((child & 4) != 0) origin.z += half;
+        size = half;
+    }
 }
 
 bvec3 dda(vec3 rayOrigin, vec3 rayDir) {
