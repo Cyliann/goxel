@@ -2,6 +2,7 @@ package app
 
 import (
 	"Cyliann/goxel/internal/camera"
+	"Cyliann/goxel/internal/voxel_data"
 	"time"
 
 	"github.com/charmbracelet/log"
@@ -18,8 +19,8 @@ func New() App {
 	app.vao = makeVao(triangle)
 	app.addCallbacks()
 	app.camera = camera.New(app.window)
-	textureID := createTexture()
-	sendTexture(textureID, app.program)
+	flat_nodes := voxel_data.GetVoxels()
+	sendSSBO(flat_nodes)
 
 	return app
 }
