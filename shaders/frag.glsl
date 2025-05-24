@@ -2,6 +2,7 @@
 out vec4 frag_color;
 
 const int MAX_RAY_STEPS = 128;
+const int WORLD_SIZE = 32;
 uniform vec2 uSize;
 uniform float uTime;
 uniform vec3 uPlayerPos;
@@ -12,6 +13,7 @@ uniform mat4 uInvProj;
 struct FlatNode {
     int child_indices[8]; // -1 means no child
     int is_leaf; // 1 for leaf, 0 otherwise
+    int _pad0, _pad1, _pad2; // pad to mutliple of 16 bytes (std430)
     // optional: int data; for voxel value
 };
 
@@ -30,20 +32,20 @@ bool getVoxel(ivec3 mapPos) {
         // If we're at a leaf, voxel is present
         if (node.is_leaf == 1) return true;
 
-        int half = size / 2;
+        int half_size = size / 2;
         int child = 0;
-        if (mapPos.x >= origin.x + half) child += 1;
-        if (mapPos.y >= origin.y + half) child += 2;
-        if (mapPos.z >= origin.z + half) child += 4;
+        if (mapPos.x >= origin.x + half_size) child += 1;
+        if (mapPos.y >= origin.y + half_size) child += 2;
+        if (mapPos.z >= origin.z + half_size) child += 4;
 
         index = node.child_indices[child];
         if (index == -1) return false;
 
         // Update bounds
-        if ((child & 1) != 0) origin.x += half;
-        if ((child & 2) != 0) origin.y += half;
-        if ((child & 4) != 0) origin.z += half;
-        size = half;
+        if ((child & 1) != 0) origin.x += half_size;
+        if ((child & 2) != 0) origin.y += half_size;
+        if ((child & 4) != 0) origin.z += half_size;
+        size = half_size;
     }
 }
 
