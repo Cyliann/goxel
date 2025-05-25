@@ -1,8 +1,10 @@
 package voxel_data
 
-import "math"
+import (
+	"math"
+)
 
-const WORLD_SIZE = 32
+const WORLD_SIZE = 128
 
 type OctreeNode struct {
 	Children [8]*OctreeNode
@@ -16,7 +18,7 @@ type FlatNode struct {
 }
 
 func GetVoxels() []FlatNode {
-	tree := buildOctreeFromGrid(createWorldMap())
+	tree := buildOctreeFromGrid()
 	nodes, _ := flattenTree(tree)
 	return nodes
 }
@@ -51,22 +53,19 @@ func flattenTree(root *OctreeNode) ([]FlatNode, int32) {
 }
 
 // Entry point
-func buildOctreeFromGrid(data [WORLD_SIZE * WORLD_SIZE * WORLD_SIZE]float32) *OctreeNode {
-	if len(data) != WORLD_SIZE*WORLD_SIZE*WORLD_SIZE {
-		panic("input data must be WORLD_SIZE^3 elements")
-	}
-	return buildRecursive(data, 0, 0, 0, WORLD_SIZE)
+func buildOctreeFromGrid() *OctreeNode {
+	return buildRecursive(0, 0, 0, WORLD_SIZE)
 }
 
 // Recursively builds the octree
-func buildRecursive(data [WORLD_SIZE * WORLD_SIZE * WORLD_SIZE]float32, ox, oy, oz, size int) *OctreeNode {
+func buildRecursive(ox, oy, oz, size int) *OctreeNode {
 	// Check if this region is empty or full
 	full := false
 	empty := true
 	for z := oz; z < oz+size; z++ {
 		for y := oy; y < oy+size; y++ {
 			for x := ox; x < ox+size; x++ {
-				if voxelAt(data, x, y, z) == 1.0 {
+				if voxelAt(x, y, z) {
 					empty = false
 				} else {
 					full = true
@@ -96,7 +95,7 @@ func buildRecursive(data [WORLD_SIZE * WORLD_SIZE * WORLD_SIZE]float32, ox, oy, 
 				cx := ox + dx*half
 				cy := oy + dy*half
 				cz := oz + dz*half
-				child := buildRecursive(data, cx, cy, cz, half)
+				child := buildRecursive(cx, cy, cz, half)
 				node.Children[index] = child
 				index++
 			}
@@ -106,28 +105,7 @@ func buildRecursive(data [WORLD_SIZE * WORLD_SIZE * WORLD_SIZE]float32, ox, oy, 
 }
 
 // Helper to access voxel value
-func voxelAt(data [WORLD_SIZE * WORLD_SIZE * WORLD_SIZE]float32, x, y, z int) float32 {
-	if x < 0 || y < 0 || z < 0 || x >= WORLD_SIZE || y >= WORLD_SIZE || z >= WORLD_SIZE {
-		return 0.0
-	}
-	return data[x+y*WORLD_SIZE+z*WORLD_SIZE*WORLD_SIZE]
-}
-
-func createWorldMap() [WORLD_SIZE * WORLD_SIZE * WORLD_SIZE]float32 {
-	var data [WORLD_SIZE * WORLD_SIZE * WORLD_SIZE]float32
-	radius := 15
-	for x := range WORLD_SIZE {
-		for y := range WORLD_SIZE {
-			for z := range WORLD_SIZE {
-				i := x + WORLD_SIZE*y + WORLD_SIZE*WORLD_SIZE*z
-				if math.Pow(float64(x-radius), 2.)+math.Pow(float64(y-radius), 2)+math.Pow(float64(z-radius), 2) < float64(radius*radius) {
-					data[i] = 1
-				} else {
-					data[i] = 0
-				}
-			}
-		}
-	}
-
-	return data
+func voxelAt(x, y, z int) bool {
+	radius := 10
+	return math.Pow(float64(x%(3*radius)-radius), 2.)+math.Pow(float64(y%(3*radius)-radius), 2)+math.Pow(float64(z%(3*radius)-radius), 2) < float64(radius*radius)
 }

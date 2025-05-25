@@ -2,7 +2,7 @@
 out vec4 frag_color;
 
 const int MAX_RAY_STEPS = 128;
-const int WORLD_SIZE = 32;
+const int WORLD_SIZE = 128;
 uniform vec2 uSize;
 uniform float uTime;
 uniform vec3 uPlayerPos;
