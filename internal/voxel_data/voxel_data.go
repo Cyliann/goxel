@@ -2,19 +2,19 @@ package voxel_data
 
 import (
 	"math"
+	"sync"
 )
 
-const WORLD_SIZE = 128
+const WORLD_SIZE = 512
 
 type OctreeNode struct {
 	Children [8]*OctreeNode
-	IsLeaf   int32
+	IsLeaf   bool
 }
 
 type FlatNode struct {
 	ChildIndices [8]int32 // -1 if no child; 32 bytes
-	IsLeaf       int32    //4 bytes
-	_            [3]int32 // 12 bytes padding
+	IsLeaf       bool     // 1 byte
 }
 
 func GetVoxels() []FlatNode {
@@ -59,48 +59,55 @@ func buildOctreeFromGrid() *OctreeNode {
 
 // Recursively builds the octree
 func buildRecursive(ox, oy, oz, size int) *OctreeNode {
-	// Check if this region is empty or full
-	full := false
-	empty := true
+	if size == 0 {
+		return nil
+	}
+
+	firstVoxel := voxelAt(ox, oy, oz)
+	isUniform := true
+
+check:
 	for z := oz; z < oz+size; z++ {
 		for y := oy; y < oy+size; y++ {
 			for x := ox; x < ox+size; x++ {
-				if voxelAt(x, y, z) {
-					empty = false
-				} else {
-					full = true
-				}
-				if !empty && full {
-					break
+				if voxelAt(x, y, z) != firstVoxel {
+					isUniform = false
+					break check
 				}
 			}
 		}
 	}
 
-	// Base cases
-	if empty {
-		return nil // Skip empty space
+	if !firstVoxel && isUniform {
+		return nil
 	}
-	if size == 1 || !full {
-		return &OctreeNode{IsLeaf: 1}
+	if size == 1 || isUniform {
+		return &OctreeNode{IsLeaf: true}
 	}
 
-	// Otherwise, subdivide
 	node := &OctreeNode{}
 	half := size / 2
-	index := 0
+	var wg sync.WaitGroup
+	wg.Add(8)
+
 	for dz := range 2 {
 		for dy := range 2 {
 			for dx := range 2 {
+				index := dz*4 + dy*2 + dx
 				cx := ox + dx*half
 				cy := oy + dy*half
 				cz := oz + dz*half
-				child := buildRecursive(cx, cy, cz, half)
-				node.Children[index] = child
-				index++
+
+				go func(i, x, y, z int) {
+					defer wg.Done()
+					child := buildRecursive(x, y, z, half)
+					node.Children[i] = child
+				}(index, cx, cy, cz)
 			}
 		}
 	}
+
+	wg.Wait()
 	return node
 }
 

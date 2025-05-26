@@ -12,9 +12,7 @@ uniform mat4 uInvProj;
 
 struct FlatNode {
     int child_indices[8]; // -1 means no child
-    int is_leaf; // 1 for leaf, 0 otherwise
-    int _pad0, _pad1, _pad2; // pad to mutliple of 16 bytes (std430)
-    // optional: int data; for voxel value
+    bool is_leaf; // 1 for leaf, 0 otherwise
 };
 
 layout(std430, binding = 0) buffer OctreeBuffer {
@@ -122,7 +120,7 @@ bvec3 traverse_octree(vec3 ray_origin, vec3 ray_direction) {
 
         FlatNode node = nodes[current.node_index];
 
-        if (node.is_leaf == 1) {
+        if (node.is_leaf) {
             // Leaf node - we have a hit
             if (current.t_min < closest_t) {
                 closest_t = current.t_min;
