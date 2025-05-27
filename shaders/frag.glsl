@@ -1,12 +1,12 @@
 #version 460
 out vec4 frag_color;
 
-const int MAX_RAY_STEPS = 128;
 const int WORLD_SIZE = 512;
+// Stack for traversal (adjust size based on max octree depth)
+const int MAX_STACK_SIZE = 16;
 uniform vec2 uSize;
 uniform float uTime;
 uniform vec3 uPlayerPos;
-const float PI = 3.14159265359;
 uniform mat4 uInvView;
 uniform mat4 uInvProj;
 
@@ -19,9 +19,7 @@ layout(std430, binding = 0) buffer OctreeBuffer {
     FlatNode nodes[];
 };
 
-// Octree ray traversal algorithm
-// Returns bvec3 mask indicating which face was hit (x=1 means hit X face, etc.)
-
+// Holds state of the current traversal
 struct TraversalState {
     int node_index;
     vec3 node_min;
@@ -30,8 +28,6 @@ struct TraversalState {
     float t_max;
 };
 
-// Stack for traversal (adjust size based on max octree depth)
-const int MAX_STACK_SIZE = 32;
 TraversalState stack[MAX_STACK_SIZE];
 int stack_ptr = 0;
 
@@ -73,20 +69,8 @@ bvec3 get_hit_face(vec3 ray_origin, vec3 ray_dir, vec3 box_min, vec3 box_max, fl
     );
 }
 
-// Get child index for octree traversal
-int get_child_index(vec3 point, vec3 node_center) {
-    int index = 0;
-    if (point.x >= node_center.x) index |= 1;
-    if (point.y >= node_center.y) index |= 2;
-    if (point.z >= node_center.z) index |= 4;
-    return index;
-}
-
 // Main octree traversal function
-bvec3 traverse_octree(vec3 ray_origin, vec3 ray_direction) {
-    // Normalize ray direction
-    vec3 ray_dir = normalize(ray_direction);
-
+bvec3 traverse_octree(vec3 ray_origin, vec3 ray_dir) {
     // Initialize traversal with root node
     vec3 world_min = vec3(0.0);
     vec3 world_max = vec3(WORLD_SIZE);
@@ -138,22 +122,22 @@ bvec3 traverse_octree(vec3 ray_origin, vec3 ray_direction) {
                 child_order[i] = i;
             }
 
-            // Simple ordering based on ray direction signs
-            if (ray_dir.x < 0.0) {
-                for (int i = 0; i < 8; i++) {
-                    child_order[i] ^= 1;
-                }
-            }
-            if (ray_dir.y < 0.0) {
-                for (int i = 0; i < 8; i++) {
-                    child_order[i] ^= 2;
-                }
-            }
-            if (ray_dir.z < 0.0) {
-                for (int i = 0; i < 8; i++) {
-                    child_order[i] ^= 4;
-                }
-            }
+            // // Simple ordering based on ray direction signs
+            // if (ray_dir.x < 0.0) {
+            //     for (int i = 0; i < 8; i++) {
+            //         child_order[i] ^= 1;
+            //     }
+            // }
+            // if (ray_dir.y < 0.0) {
+            //     for (int i = 0; i < 8; i++) {
+            //         child_order[i] ^= 2;
+            //     }
+            // }
+            // if (ray_dir.z < 0.0) {
+            //     for (int i = 0; i < 8; i++) {
+            //         child_order[i] ^= 4;
+            //     }
+            // }
 
             // Add children to stack in reverse order for proper traversal
             for (int i = 7; i >= 0; i--) {
