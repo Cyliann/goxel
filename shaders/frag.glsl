@@ -1,9 +1,10 @@
-#version 460
+#version 460 core
 out vec4 frag_color;
 
-const int WORLD_SIZE = 512;
+const int WORLD_SIZE = 256;
 // Stack for traversal (adjust size based on max octree depth)
-const int MAX_STACK_SIZE = 16;
+const int MAX_STACK_SIZE = 32;
+
 uniform vec2 uSize;
 uniform float uTime;
 uniform vec3 uPlayerPos;
@@ -122,22 +123,22 @@ bvec3 traverse_octree(vec3 ray_origin, vec3 ray_dir) {
                 child_order[i] = i;
             }
 
-            // // Simple ordering based on ray direction signs
-            // if (ray_dir.x < 0.0) {
-            //     for (int i = 0; i < 8; i++) {
-            //         child_order[i] ^= 1;
-            //     }
-            // }
-            // if (ray_dir.y < 0.0) {
-            //     for (int i = 0; i < 8; i++) {
-            //         child_order[i] ^= 2;
-            //     }
-            // }
-            // if (ray_dir.z < 0.0) {
-            //     for (int i = 0; i < 8; i++) {
-            //         child_order[i] ^= 4;
-            //     }
-            // }
+            // Simple ordering based on ray direction signs
+            if (ray_dir.x < 0.0) {
+                for (int i = 0; i < 8; i++) {
+                    child_order[i] ^= 1;
+                }
+            }
+            if (ray_dir.y < 0.0) {
+                for (int i = 0; i < 8; i++) {
+                    child_order[i] ^= 2;
+                }
+            }
+            if (ray_dir.z < 0.0) {
+                for (int i = 0; i < 8; i++) {
+                    child_order[i] ^= 4;
+                }
+            }
 
             // Add children to stack in reverse order for proper traversal
             for (int i = 7; i >= 0; i--) {
@@ -171,6 +172,7 @@ bvec3 traverse_octree(vec3 ray_origin, vec3 ray_dir) {
 
     return hit_face;
 }
+
 void main() {
     vec2 uv = (gl_FragCoord.xy * 2.0 - uSize) / uSize.y;
     vec3 rayOrigin = uPlayerPos;

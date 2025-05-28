@@ -5,7 +5,7 @@ import (
 	"sync"
 )
 
-const WORLD_SIZE = 512
+const WORLD_SIZE = 256
 
 type OctreeNode struct {
 	Children [8]*OctreeNode

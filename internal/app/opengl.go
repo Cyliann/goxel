@@ -96,12 +96,3 @@ func sendSSBO(flat []voxel_data.FlatNode) uint32 {
 
 	return ssbo
 }
-
-// Passes the 3D texture to the shader
-func sendTexture(textureID uint32, program uint32) {
-	gl.BindTexture(gl.TEXTURE_3D, textureID)
-	textureUniformLocation := gl.GetUniformLocation(program, gl.Str("voxelMap\x00"))
-	gl.Uniform1i(textureUniformLocation, 0)
-	gl.ActiveTexture(gl.TEXTURE0)
-	gl.BindTexture(gl.TEXTURE_3D, textureID)
-}
