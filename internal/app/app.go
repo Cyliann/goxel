@@ -2,6 +2,7 @@ package app
 
 import (
 	"Cyliann/goxel/internal/camera"
+	"Cyliann/goxel/internal/graphics"
 	"Cyliann/goxel/internal/voxel_data"
 	"time"
 
@@ -14,13 +15,13 @@ import (
 func New() App {
 	app := App{shaderReloading: false}
 
-	app.window = initGlfw()
-	app.program = initOpenGL()
-	app.vao = makeVao(triangle)
+	app.window = graphics.InitGlfw()
+	app.program = graphics.InitOpenGL()
 	app.addCallbacks()
 	app.camera = camera.New(app.window)
+	app.renderTexture = graphics.CreateRenderTexture(app.window.GetMonitor().GetVideoMode().Width, app.window.GetMonitor().GetVideoMode().Height)
 	flat_nodes := voxel_data.GetVoxels()
-	sendSSBO(flat_nodes)
+	graphics.SendSSBO(flat_nodes)
 
 	return app
 }
@@ -31,6 +32,7 @@ type App struct {
 	vao             uint32
 	camera          camera.Camera
 	shaderReloading bool
+	renderTexture   uint32
 }
 
 // App.Run is the main app loop. Polls events and calls App.draw()
@@ -63,8 +65,7 @@ func (self *App) draw() {
 }
 
 func (self *App) addCallbacks() {
-	scale_x, scale_y := self.window.GetMonitor().GetContentScale()
-	self.window.SetSizeCallback(windowResizeCallback(self.program, scale_x, scale_y))
+	graphics.SetCallbacks(self.window, self.program)
 }
 
 func (self *App) updateUniforms(elapsedTime float32) {
@@ -82,25 +83,20 @@ func (self *App) updateUniforms(elapsedTime float32) {
 }
 
 func reloadShaders(app *App) error {
-	vertexShader, err := compileShader("shaders/vert.glsl", gl.VERTEX_SHADER)
+	computeShader, err := graphics.CompileShader("shaders/compute.glsl", gl.COMPUTE_SHADER)
 	if err != nil {
-		return err
-	}
-	fragmentShader, err := compileShader("shaders/frag.glsl", gl.FRAGMENT_SHADER)
-	if err != nil {
-		return err
+		return (err)
 	}
 
 	prog := gl.CreateProgram()
 
-	gl.AttachShader(prog, vertexShader)
-	gl.AttachShader(prog, fragmentShader)
+	gl.AttachShader(prog, computeShader)
 	gl.LinkProgram(prog)
 	gl.UseProgram(prog)
 
 	app.program = prog
-	forceSizeUpdate(app)
-	log.Debug("Reloaded: ", "Program", app.program, "frag", fragmentShader)
+	graphics.ForceSizeUpdate(app.window, app.program)
+	log.Debug("Reloaded: ", "Program", app.program, "shader", computeShader)
 
 	return nil
 }
