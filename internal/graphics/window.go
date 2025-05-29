@@ -1,4 +1,4 @@
-package app
+package graphics
 
 import (
 	"github.com/charmbracelet/log"
@@ -6,16 +6,8 @@ import (
 	"github.com/go-gl/glfw/v3.3/glfw"
 )
 
-var (
-	triangle = []float32{
-		3, -1, 0, // top left
-		-1, 3, 0, // bottom right
-		-1, -1, 0, // bottom left
-	}
-)
-
-// initGlfw initializes glfw and returns a Window to use.
-func initGlfw() *glfw.Window {
+// InitGlfw initializes glfw and returns a Window to use.
+func InitGlfw() *glfw.Window {
 	if err := glfw.Init(); err != nil {
 		panic(err)
 	}
@@ -78,10 +70,15 @@ func findBestMode(modes []*glfw.VidMode, targetWidth, targetHeight, targetRefres
 }
 
 // Manualy sets uSize uniform
-func forceSizeUpdate(app *App) {
-	scale_x, scale_y := app.window.GetMonitor().GetContentScale()
-	width := app.window.GetMonitor().GetVideoMode().Width
-	height := app.window.GetMonitor().GetVideoMode().Height
+func ForceSizeUpdate(window *glfw.Window, program uint32) {
+	scale_x, scale_y := window.GetMonitor().GetContentScale()
+	width := window.GetMonitor().GetVideoMode().Width
+	height := window.GetMonitor().GetVideoMode().Height
 
-	windowResizeCallback(app.program, scale_x, scale_y)(app.window, width-1, height-1)
+	windowResizeCallback(program, scale_x, scale_y)(window, width-1, height-1)
+}
+
+func SetCallbacks(window *glfw.Window, program uint32) {
+	scale_x, scale_y := window.GetMonitor().GetContentScale()
+	window.SetSizeCallback(windowResizeCallback(program, scale_x, scale_y))
 }
