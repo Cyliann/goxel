@@ -9,5 +9,5 @@ pkgs.mkShell {
     xorg.libX11
   ];
 
-  shellHook = "zsh";
+  shellHook = "nu";
 }

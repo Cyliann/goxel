@@ -2,15 +2,15 @@ package app
 
 import (
 	"fmt"
-	"math"
 	"os"
 	"strings"
+	"unsafe"
+
+	"Cyliann/goxel/internal/voxel_data"
 
 	"github.com/charmbracelet/log"
 	"github.com/go-gl/gl/v4.1-core/gl"
 )
-
-const WORLD_SIZE = 32
 
 // initOpenGL initializes OpenGL and returns an intiialized program and a fragment shader.
 func initOpenGL() uint32 {
@@ -86,47 +86,13 @@ func compileShader(path string, shaderType uint32) (uint32, error) {
 	return shader, nil
 }
 
-// Creates a 3D texture
-func createTexture() uint32 {
-	data := createWorldMap()
-	var textureID uint32
-	gl.GenTextures(1, &textureID)
-	gl.BindTexture(gl.TEXTURE_3D, textureID)
-	gl.TexImage3D(gl.TEXTURE_3D, 0, gl.RED, WORLD_SIZE, WORLD_SIZE, WORLD_SIZE, 0, gl.RED, gl.FLOAT, gl.Ptr(&data[0]))
-	gl.TexParameteri(gl.TEXTURE_3D, gl.TEXTURE_MIN_FILTER, gl.NEAREST)
-	gl.TexParameteri(gl.TEXTURE_3D, gl.TEXTURE_MAG_FILTER, gl.NEAREST)
-	gl.TexParameteri(gl.TEXTURE_3D, gl.TEXTURE_WRAP_R, gl.REPEAT)
-	gl.TexParameteri(gl.TEXTURE_3D, gl.TEXTURE_WRAP_S, gl.REPEAT)
-	gl.TexParameteri(gl.TEXTURE_3D, gl.TEXTURE_WRAP_T, gl.REPEAT)
-	gl.BindTexture(gl.TEXTURE_3D, 0)
+// Creates and sends an SSBO
+func sendSSBO(flat []voxel_data.FlatNode) uint32 {
+	var ssbo uint32
+	gl.GenBuffers(1, &ssbo)
+	gl.BindBuffer(gl.SHADER_STORAGE_BUFFER, ssbo)
+	gl.BufferData(gl.SHADER_STORAGE_BUFFER, len(flat)*int(unsafe.Sizeof(flat[0])), gl.Ptr(flat), gl.STATIC_DRAW)
+	gl.BindBufferBase(gl.SHADER_STORAGE_BUFFER, 0, ssbo)
 
-	return textureID
-}
-
-// Passes the 3D texture to the shader
-func sendTexture(textureID uint32, program uint32) {
-	gl.BindTexture(gl.TEXTURE_3D, textureID)
-	textureUniformLocation := gl.GetUniformLocation(program, gl.Str("voxelMap\x00"))
-	gl.Uniform1i(textureUniformLocation, 0)
-	gl.ActiveTexture(gl.TEXTURE0)
-	gl.BindTexture(gl.TEXTURE_3D, textureID)
-}
-
-func createWorldMap() [WORLD_SIZE * WORLD_SIZE * WORLD_SIZE]float32 {
-	var data [WORLD_SIZE * WORLD_SIZE * WORLD_SIZE]float32
-	radius := 15
-	for x := range WORLD_SIZE {
-		for y := range WORLD_SIZE {
-			for z := range WORLD_SIZE {
-				i := x + WORLD_SIZE*y + WORLD_SIZE*WORLD_SIZE*z
-				if math.Pow(float64(x-radius), 2.)+math.Pow(float64(y-radius), 2)+math.Pow(float64(z-radius), 2) < float64(radius*radius) {
-					data[i] = 1
-				} else {
-					data[i] = 0
-				}
-			}
-		}
-	}
-
-	return data
+	return ssbo
 }
