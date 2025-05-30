@@ -71,7 +71,7 @@ func SendSSBO(flat []voxel_data.FlatNode) uint32 {
 	gl.GenBuffers(1, &ssbo)
 	gl.BindBuffer(gl.SHADER_STORAGE_BUFFER, ssbo)
 	gl.BufferData(gl.SHADER_STORAGE_BUFFER, len(flat)*int(unsafe.Sizeof(flat[0])), gl.Ptr(flat), gl.STATIC_DRAW)
-	gl.BindBufferBase(gl.SHADER_STORAGE_BUFFER, 0, ssbo)
+	gl.BindBufferBase(gl.SHADER_STORAGE_BUFFER, 1, ssbo)
 
 	return ssbo
 }
