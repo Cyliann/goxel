@@ -25,8 +25,8 @@ func New(window *glfw.Window) Camera {
 	window.SetInputMode(glfw.CursorMode, glfw.CursorDisabled)
 	x, y := window.GetCursorPos()
 	return Camera{
-		mgl32.Vec3{0, 0, 3},                // pos
-		mgl32.Vec3{0, 0, -1},               // direction
+		mgl32.Vec3{64, 64, -64},            // pos
+		mgl32.Vec3{0, 0, 1},                // direction
 		mgl32.Vec2{float32(x), float32(y)}, // mous pos
 		0,                                  // pitchDelta
 		0,                                  // yawDelta

@@ -1,5 +1,5 @@
 #version 460 core
-out vec4 frag_color;
+layout(rgba32f, binding = 0) uniform writeonly image2D outputImage;
 
 const int WORLD_SIZE = 256;
 // Stack for traversal (adjust size based on max octree depth)
@@ -15,8 +15,7 @@ struct FlatNode {
     int child_indices[8]; // -1 means no child
     bool is_leaf; // 1 for leaf, 0 otherwise
 };
-
-layout(std430, binding = 0) buffer OctreeBuffer {
+layout(std430, binding = 1) buffer OctreeBuffer {
     FlatNode nodes[];
 };
 
@@ -173,29 +172,35 @@ bvec3 traverse_octree(vec3 ray_origin, vec3 ray_dir) {
     return hit_face;
 }
 
+layout(local_size_x = 16, local_size_y = 16) in;
 void main() {
-    vec2 uv = (gl_FragCoord.xy * 2.0 - uSize) / uSize.y;
+    vec4 color = vec4(0.);
+    ivec2 pixelCoord = ivec2(gl_GlobalInvocationID.xy);
+
+    if (pixelCoord.x >= imageSize(outputImage).x || pixelCoord.y >= imageSize(outputImage).y)
+        return;
+
+    vec2 uv = (pixelCoord * 2.0 - uSize) / uSize.y;
     vec3 rayOrigin = uPlayerPos;
 
     vec4 target = uInvProj * vec4(uv, 1, 1);
     vec3 rayDirection = (uInvView * vec4(normalize(target.xyz / target.w), 0)).xyz;
     vec3 lightDirection = -1 * normalize(vec3(sin(uTime * 2), 1, cos(uTime * 2)));
 
-    // frag_color = vec4(raySphereIntersection(rayOrigin, rayDirection, .7, lightDirection), 1);
-    // vec3 texCoord = vec3((uv.x + 1.0) / 2.0, (uv.y + 1.0) / 2.0, 0);
-    // frag_color = vec4(vec3(texture(voxelMap, vec3(uv * 4, 0)) * 255), 1);
     bvec3 mask = traverse_octree(rayOrigin, rayDirection);
     if (mask.x) {
-        frag_color.xyz = vec3(0.5);
+        color.xyz = vec3(0.5);
     }
     else if (mask.y) {
-        frag_color.xyz = vec3(1.0);
+        color.xyz = vec3(1.0);
     }
     else if (mask.z) {
-        frag_color.xyz = vec3(0.75);
+        color.xyz = vec3(0.75);
     }
     else {
-        frag_color.xyz = vec3(0.53, 0.81, 0.94);
+        color.xyz = vec3(0.53, 0.81, 0.94);
     }
-    frag_color.w = 1;
+    color.w = 1;
+
+    imageStore(outputImage, pixelCoord, color);
 }

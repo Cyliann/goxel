@@ -2,6 +2,7 @@ package app
 
 import (
 	"Cyliann/goxel/internal/camera"
+	"Cyliann/goxel/internal/graphics"
 	"Cyliann/goxel/internal/voxel_data"
 	"time"
 
@@ -12,15 +13,25 @@ import (
 
 // New creates a new app. Calls initGlfw() and initOpenGL().
 func New() App {
+	var err error
 	app := App{shaderReloading: false}
 
-	app.window = initGlfw()
-	app.program = initOpenGL()
-	app.vao = makeVao(triangle)
+	app.window = graphics.InitGlfw()
+	app.program = graphics.InitOpenGL()
 	app.addCallbacks()
 	app.camera = camera.New(app.window)
+
+	width := app.window.GetMonitor().GetVideoMode().Width
+	height := app.window.GetMonitor().GetVideoMode().Height
+
+	app.renderTexture = graphics.CreateRenderTexture(width, height)
+	app.framebuffer, err = graphics.CreateFramebufferWithTexture(app.renderTexture)
+	if err != nil {
+		panic("Failed to create framebuffer")
+	}
+
 	flat_nodes := voxel_data.GetVoxels()
-	sendSSBO(flat_nodes)
+	graphics.SendSSBO(flat_nodes)
 
 	return app
 }
@@ -31,6 +42,8 @@ type App struct {
 	vao             uint32
 	camera          camera.Camera
 	shaderReloading bool
+	renderTexture   uint32
+	framebuffer     uint32
 }
 
 // App.Run is the main app loop. Polls events and calls App.draw()
@@ -56,15 +69,17 @@ func (self *App) Run() {
 func (self *App) draw() {
 	gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
-	gl.BindVertexArray(self.vao)
-	gl.DrawArrays(gl.TRIANGLES, 0, int32(len(triangle)/3))
+	width := self.window.GetMonitor().GetVideoMode().Width
+	height := self.window.GetMonitor().GetVideoMode().Height
 
+	graphics.RunCompute(self.program, self.renderTexture, width, height)
+
+	graphics.BlitFramebuffer(self.framebuffer, width, height)
 	self.window.SwapBuffers()
 }
 
 func (self *App) addCallbacks() {
-	scale_x, scale_y := self.window.GetMonitor().GetContentScale()
-	self.window.SetSizeCallback(windowResizeCallback(self.program, scale_x, scale_y))
+	graphics.SetCallbacks(self.window, self.program, self.renderTexture, self.framebuffer)
 }
 
 func (self *App) updateUniforms(elapsedTime float32) {
@@ -81,26 +96,21 @@ func (self *App) updateUniforms(elapsedTime float32) {
 	gl.UniformMatrix4fv(uInvProj, 1, false, &self.camera.InverseProj[0]) // pass the pointer to the first element. The rest is calculated by opengl
 }
 
-func reloadShaders(app *App) error {
-	vertexShader, err := compileShader("shaders/vert.glsl", gl.VERTEX_SHADER)
+func (self *App) reloadShaders() error {
+	computeShader, err := graphics.CompileShader("shaders/compute.glsl", gl.COMPUTE_SHADER)
 	if err != nil {
-		return err
-	}
-	fragmentShader, err := compileShader("shaders/frag.glsl", gl.FRAGMENT_SHADER)
-	if err != nil {
-		return err
+		return (err)
 	}
 
 	prog := gl.CreateProgram()
 
-	gl.AttachShader(prog, vertexShader)
-	gl.AttachShader(prog, fragmentShader)
+	gl.AttachShader(prog, computeShader)
 	gl.LinkProgram(prog)
 	gl.UseProgram(prog)
 
-	app.program = prog
-	forceSizeUpdate(app)
-	log.Debug("Reloaded: ", "Program", app.program, "frag", fragmentShader)
+	self.program = prog
+	graphics.ForceSizeUpdate(self.window, self.program, self.renderTexture, self.framebuffer)
+	log.Debug("Reloaded: ", "Program", self.program, "shader", computeShader)
 
 	return nil
 }
