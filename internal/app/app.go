@@ -13,13 +13,23 @@ import (
 
 // New creates a new app. Calls initGlfw() and initOpenGL().
 func New() App {
+	var err error
 	app := App{shaderReloading: false}
 
 	app.window = graphics.InitGlfw()
 	app.program = graphics.InitOpenGL()
 	app.addCallbacks()
 	app.camera = camera.New(app.window)
-	app.renderTexture = graphics.CreateRenderTexture(app.window.GetMonitor().GetVideoMode().Width, app.window.GetMonitor().GetVideoMode().Height)
+
+	width := app.window.GetMonitor().GetVideoMode().Width
+	height := app.window.GetMonitor().GetVideoMode().Height
+
+	app.renderTexture = graphics.CreateRenderTexture(width, height)
+	app.framebuffer, err = graphics.CreateFramebufferWithTexture(app.renderTexture)
+	if err != nil {
+		panic("Failed to create framebuffer")
+	}
+
 	flat_nodes := voxel_data.GetVoxels()
 	graphics.SendSSBO(flat_nodes)
 
@@ -33,6 +43,7 @@ type App struct {
 	camera          camera.Camera
 	shaderReloading bool
 	renderTexture   uint32
+	framebuffer     uint32
 }
 
 // App.Run is the main app loop. Polls events and calls App.draw()
@@ -58,14 +69,17 @@ func (self *App) Run() {
 func (self *App) draw() {
 	gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
-	gl.BindVertexArray(self.vao)
-	gl.DrawArrays(gl.TRIANGLES, 0, int32(len(triangle)/3))
+	width := self.window.GetMonitor().GetVideoMode().Width
+	height := self.window.GetMonitor().GetVideoMode().Height
 
+	graphics.RunCompute(self.program, self.renderTexture, width, height)
+
+	graphics.BlitFramebuffer(self.framebuffer, width, height)
 	self.window.SwapBuffers()
 }
 
 func (self *App) addCallbacks() {
-	graphics.SetCallbacks(self.window, self.program)
+	graphics.SetCallbacks(self.window, self.program, self.renderTexture, self.framebuffer)
 }
 
 func (self *App) updateUniforms(elapsedTime float32) {
@@ -82,7 +96,7 @@ func (self *App) updateUniforms(elapsedTime float32) {
 	gl.UniformMatrix4fv(uInvProj, 1, false, &self.camera.InverseProj[0]) // pass the pointer to the first element. The rest is calculated by opengl
 }
 
-func reloadShaders(app *App) error {
+func (self *App) reloadShaders() error {
 	computeShader, err := graphics.CompileShader("shaders/compute.glsl", gl.COMPUTE_SHADER)
 	if err != nil {
 		return (err)
@@ -94,9 +108,9 @@ func reloadShaders(app *App) error {
 	gl.LinkProgram(prog)
 	gl.UseProgram(prog)
 
-	app.program = prog
-	graphics.ForceSizeUpdate(app.window, app.program)
-	log.Debug("Reloaded: ", "Program", app.program, "shader", computeShader)
+	self.program = prog
+	graphics.ForceSizeUpdate(self.window, self.program, self.renderTexture, self.framebuffer)
+	log.Debug("Reloaded: ", "Program", self.program, "shader", computeShader)
 
 	return nil
 }

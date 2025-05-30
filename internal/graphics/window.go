@@ -44,9 +44,9 @@ func InitGlfw() *glfw.Window {
 }
 
 // Returns a closure, so you can pass parameters to it (eg. program)
-func windowResizeCallback(program uint32, scale_x float32, scale_y float32) func(*glfw.Window, int, int) {
+func windowResizeCallback(program, renderTexture, framebuffer uint32, scale_x, scale_y float32) func(*glfw.Window, int, int) {
 	return func(window *glfw.Window, width int, height int) {
-		gl.Viewport(0, 0, int32(float32(width)*scale_x), int32(float32(height)*scale_y))
+		ResizeTexture(framebuffer, renderTexture, width, height)
 		uSize := gl.GetUniformLocation(program, gl.Str("uSize"+"\x00"))
 		gl.Uniform2f(uSize, float32(width)*scale_x, float32(height)*scale_y)
 	}
@@ -70,15 +70,15 @@ func findBestMode(modes []*glfw.VidMode, targetWidth, targetHeight, targetRefres
 }
 
 // Manualy sets uSize uniform
-func ForceSizeUpdate(window *glfw.Window, program uint32) {
+func ForceSizeUpdate(window *glfw.Window, program, renderTexture, framebuffer uint32) {
 	scale_x, scale_y := window.GetMonitor().GetContentScale()
 	width := window.GetMonitor().GetVideoMode().Width
 	height := window.GetMonitor().GetVideoMode().Height
 
-	windowResizeCallback(program, scale_x, scale_y)(window, width-1, height-1)
+	windowResizeCallback(program, renderTexture, framebuffer, scale_x, scale_y)(window, width-1, height-1)
 }
 
-func SetCallbacks(window *glfw.Window, program uint32) {
+func SetCallbacks(window *glfw.Window, program, renderTexture, framebuffer uint32) {
 	scale_x, scale_y := window.GetMonitor().GetContentScale()
-	window.SetSizeCallback(windowResizeCallback(program, scale_x, scale_y))
+	window.SetSizeCallback(windowResizeCallback(program, renderTexture, framebuffer, scale_x, scale_y))
 }

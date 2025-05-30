@@ -66,7 +66,7 @@ func (self *App) HandleInput() bool {
 
 	if self.window.GetKey(glfw.KeyR) == glfw.Press && !self.shaderReloading {
 		self.shaderReloading = true
-		err := reloadShaders(self)
+		err := self.reloadShaders()
 		if err != nil {
 			log.Errorf("Reload failed with: %v", err)
 		}

@@ -109,3 +109,30 @@ func attachTextureToFramebuffer(texture, framebuffer uint32) error {
 	}
 	return nil
 }
+
+func ResizeTexture(framebuffer, texture uint32, width, height int) {
+	gl.DeleteTextures(1, &texture)
+	newTexture := CreateRenderTexture(width, height)
+	attachTextureToFramebuffer(newTexture, framebuffer)
+}
+
+func RunCompute(computeShader, renderTexture uint32, width, height int) {
+	gl.UseProgram(computeShader)
+	gl.BindImageTexture(0, renderTexture, 0, false, 0, gl.WRITE_ONLY, gl.RGBA32F)
+
+	const workGroupSizeX uint32 = 16
+	const workGroupSizeY uint32 = 16
+
+	numGroupsX := (uint32(width) + workGroupSizeX - 1) / workGroupSizeX
+	numGroupsY := (uint32(height) + workGroupSizeY - 1) / workGroupSizeY
+
+	gl.DispatchCompute(numGroupsX, numGroupsY, 1)
+	gl.MemoryBarrier(gl.SHADER_IMAGE_ACCESS_BARRIER_BIT)
+}
+
+func BlitFramebuffer(framebuffer uint32, width, height int) {
+	gl.BindFramebuffer(gl.READ_FRAMEBUFFER, framebuffer)
+	gl.BindFramebuffer(gl.DRAW_FRAMEBUFFER, 0) // swapchain
+
+	gl.BlitFramebuffer(0, 0, int32(width), int32(height), 0, 0, int32(width), int32(height), gl.COLOR_BUFFER_BIT, gl.NEAREST)
+}
