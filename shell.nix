@@ -8,6 +8,4 @@ pkgs.mkShell {
     glfw-wayland
     xorg.libX11
   ];
-
-  shellHook = "nu";
 }
